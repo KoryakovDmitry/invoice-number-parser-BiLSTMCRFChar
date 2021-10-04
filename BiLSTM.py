@@ -66,8 +66,8 @@ class BiLSTMCRF(nn.Module):
 
     def init_hidden(self):
         return (
-            torch.randn(2, 1, self.hidden_dim // 2),
-            torch.randn(2, 1, self.hidden_dim // 2),
+            torch.randn(2, 1, self.hidden_dim // 2).to(DEVICE),
+            torch.randn(2, 1, self.hidden_dim // 2).to(DEVICE),
         )
 
     def _forward_alg(self, feats):
