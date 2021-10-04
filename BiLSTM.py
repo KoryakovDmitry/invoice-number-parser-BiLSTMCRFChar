@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+
 torch.manual_seed(42)
 
 
@@ -14,6 +15,7 @@ STOP_TAG = "<STOP>"
 EMBEDDING_DIM = 5
 HIDDEN_DIM = 4
 tag_to_ix = {"B": 0, "I": 1, "O": 2, START_TAG: 3, STOP_TAG: 4}
+DEVICE = torch.device("cuda")
 
 
 def argmax(vec):
@@ -195,17 +197,21 @@ with open(
     json.dump(char_to_ix, f, ensure_ascii=False)
 
 model = BiLSTMCRF(len(char_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
+model = model.to(DEVICE)
 optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
 
 # Check predictions before training
 with torch.no_grad():
-    precheck_sent = prepare_sequence(training_data[0][0], char_to_ix)
-    precheck_tags = torch.tensor([tag_to_ix[t] for t in training_data[0][1]], dtype=torch.long)
+    precheck_sent = prepare_sequence(training_data[0][0], char_to_ix).to(DEVICE)
+    precheck_tags = torch.tensor(
+        [tag_to_ix[t] for t in training_data[0][1]], dtype=torch.long
+    ).to(DEVICE)
     print(model(precheck_sent))
 
 # Make sure prepare_sequence from earlier in the LSTM section is loaded
-for epoch in tqdm(range(
-        300)):  # again, normally you would NOT do 300 epochs, it is toy data
+for epoch in tqdm(
+    range(300)
+):  # again, normally you would NOT do 300 epochs, it is toy data
     for sentence, tags in training_data:
         # Step 1. Remember that Pytorch accumulates gradients.
         # We need to clear them out before each instance
@@ -217,6 +223,8 @@ for epoch in tqdm(range(
         targets = torch.tensor([tag_to_ix[t] for t in tags], dtype=torch.long)
 
         # Step 3. Run our forward pass.
+        targets = targets.to(DEVICE)
+        sentence_in = sentence_in.to(DEVICE)
         loss = model.neg_log_likelihood(sentence_in, targets)
 
         # Step 4. Compute the loss, gradients, and update the parameters by
