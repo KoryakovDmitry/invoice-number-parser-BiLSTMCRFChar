@@ -61,7 +61,7 @@ class BiLSTMCRF(nn.Module):
         # to the start tag and we never transfer from the stop tag
         self.transitions.data[tag_to_ix[START_TAG], :] = -10000
         self.transitions.data[:, tag_to_ix[STOP_TAG]] = -10000
-
+        self.transitions = self.transitions.to(DEVICE)
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
